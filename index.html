@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz App - Uzair</title>
+
+    <!-- project 4 - quiz app - uzair iqbal
+         timer wala part thora mushkil tha samajhne mein lol -->
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a2e;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .quiz-box {
+            background: white;
+            border-radius: 12px;
+            padding: 35px 30px;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+
+        /* top part jahan question number aur timer hai */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 22px;
+        }
+
+        .q-count {
+            font-size: 13px;
+            color: #888;
+            font-weight: bold;
+        }
+
+        /* timer circle wala */
+        .timer {
+            background: #1a1a2e;
+            color: white;
+            border-radius: 50%;
+            width: 52px;
+            height: 52px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* jab time kam ho jaye toh red */
+        .timer.danger {
+            background: #e74c3c;
+        }
+
+        /* progress bar */
+        .progress-bar {
+            height: 6px;
+            background: #eee;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #6c63ff;
+            border-radius: 10px;
+            /* ye transition mujhe stack overflow pe mila tha */
+            transition: width 0.3s ease;
+        }
+
+        /* question text */
+        .question {
+            font-size: 17px;
+            color: #222;
+            font-weight: bold;
+            margin-bottom: 22px;
+            line-height: 1.5;
+        }
+
+        /* options list */
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
+            margin-bottom: 25px;
+        }
+
+        .option-btn {
+            padding: 13px 16px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+            transition: all 0.2s;
+        }
+
+        .option-btn:hover {
+            border-color: #6c63ff;
+            background: #f5f4ff;
+        }
+
+        /* sahi jawab green */
+        .option-btn.correct {
+            border-color: #2ecc71;
+            background: #eafaf1;
+            color: #1a7a4a;
+            font-weight: bold;
+        }
+
+        /* galat jawab red */
+        .option-btn.wrong {
+            border-color: #e74c3c;
+            background: #fdecea;
+            color: #c0392b;
+        }
+
+        /* next button */
+        #next-btn {
+            width: 100%;
+            padding: 13px;
+            background: #6c63ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+            display: none; /* pehle chupa ke rakhte hain */
+        }
+
+        #next-btn:hover {
+            background: #574fd6;
+        }
+
+        /* result screen */
+        #result-screen {
+            display: none;
+            text-align: center;
+        }
+
+        .result-emoji {
+            font-size: 60px;
+            margin-bottom: 12px;
+        }
+
+        #result-screen h2 {
+            font-size: 22px;
+            color: #222;
+            margin-bottom: 8px;
+        }
+
+        .score-text {
+            font-size: 40px;
+            font-weight: bold;
+            color: #6c63ff;
+            margin: 15px 0;
+        }
+
+        .score-msg {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        #restart-btn {
+            padding: 13px 35px;
+            background: #1a1a2e;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        #restart-btn:hover {
+            background: #2d2d5e;
+        }
+
+        /* start screen */
+        #start-screen {
+            text-align: center;
+        }
+
+        #start-screen h2 {
+            font-size: 24px;
+            color: #222;
+            margin-bottom: 10px;
+        }
+
+        #start-screen p {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        #start-btn {
+            padding: 13px 40px;
+            background: #6c63ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        /* quiz screen default mein chupa hai */
+        #quiz-screen {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-box">
+
+    <!-- start screen -->
+    <div id="start-screen">
+        <div style="font-size:55px; margin-bottom:15px;">🧠</div>
+        <h2>General Knowledge Quiz</h2>
+        <p>
+            10 questions honge<br>
+            Har question ke liye 30 seconds milenge<br>
+            Score end mein dikhe ga<br><br>
+            <small style="color:#aaa;">— made by Uzair Iqbal</small>
+        </p>
+        <button id="start-btn" onclick="startQuiz()">Start Quiz!</button>
+    </div>
+
+    <!-- quiz screen -->
+    <div id="quiz-screen">
+        <div class="top-bar">
+            <span class="q-count" id="q-count">Question 1/10</span>
+            <div class="timer" id="timer">30</div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+        </div>
+
+        <p class="question" id="question-text">Question yahan aayega</p>
+
+        <div class="options" id="options-container">
+            <!-- options yahan dynamically aayenge -->
+        </div>
+
+        <button id="next-btn" onclick="nextQuestion()">Next →</button>
+    </div>
+
+    <!-- result screen -->
+    <div id="result-screen">
+        <div class="result-emoji" id="result-emoji">🎉</div>
+        <h2>Quiz Complete!</h2>
+        <div class="score-text" id="score-display">0/10</div>
+        <p class="score-msg" id="score-msg">Result message yahan</p>
+        <button id="restart-btn" onclick="restartQuiz()">🔁 Phir Se Khelo</button>
+        <p style="margin-top:20px; font-size:11px; color:#ccc;">by Uzair Iqbal</p>
+    </div>
+
+</div>
+
+<script>
+
+    // ==== QUESTIONS ARRAY ====
+    // ye mujhe khud sochne paray 10 questions -- general knowledge wale
+    var questions = [
+        {
+            q: "Earth ka sabse bada ocean kaun sa hai?",
+            options: ["Atlantic", "Indian", "Pacific", "Arctic"],
+            answer: 2
+        },
+        {
+            q: "Pakistan ka capital city kaun sa hai?",
+            options: ["Lahore", "Karachi", "Islamabad", "Peshawar"],
+            answer: 2
+        },
+        {
+            q: "Ek minute mein kitne seconds hote hain?",
+            options: ["30", "100", "60", "90"],
+            answer: 2
+        },
+        {
+            q: "HTML ki full form kya hai?",
+            options: [
+                "Hyper Text Markup Language",
+                "High Tech Modern Language",
+                "Hyper Transfer Mode Link",
+                "Home Tool Markup Language"
+            ],
+            answer: 0
+        },
+        {
+            q: "Duniya mein sabse zyada bola jane wala programming language kaun sa hai? (2024 ke hisaab se)",
+            options: ["Java", "C++", "Python", "JavaScript"],
+            answer: 3
+        },
+        {
+            q: "Google ka headquarter kahan hai?",
+            options: ["New York", "California", "Texas", "Washington"],
+            answer: 1
+        },
+        {
+            q: "CSS ka kya matlab hai?",
+            options: [
+                "Computer Style Sheet",
+                "Cascading Style Sheet",
+                "Creative Style Syntax",
+                "Coded Style System"
+            ],
+            answer: 1
+        },
+        {
+            q: "Insan ke body mein kitni haddiyan hoti hain?",
+            options: ["206", "198", "215", "220"],
+            answer: 0
+        },
+        {
+            q: "Mount Everest duniya ka sabse uncha pahar hai - ye kahan hai?",
+            options: ["India", "China", "Nepal", "Tibet"],
+            answer: 2
+        },
+        {
+            q: "JavaScript mein console mein kuch print karne ka command kya hai?",
+            options: ["print()", "log()", "console.log()", "console.print()"],
+            answer: 2
+        }
+    ];
+
+    // variables jo mujhe track karne honge
+    var currentQ = 0;
+    var score = 0;
+    var timerInterval; // timer band karne ke liye
+    var timeLeft = 30;
+    var answered = false; // ek hi baar answer ho
+
+    function startQuiz() {
+        // start screen chupao
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+
+        showQuestion();
+    }
+
+    function showQuestion() {
+        answered = false;
+        timeLeft = 30;
+
+        // next button chupao
+        document.getElementById('next-btn').style.display = 'none';
+
+        var q = questions[currentQ];
+
+        // question number update karo
+        document.getElementById('q-count').innerText = 'Question ' + (currentQ + 1) + '/10';
+
+        // progress bar update
+        var percent = (currentQ / 10) * 100;
+        document.getElementById('progress-fill').style.width = percent + '%';
+
+        // question text set karo
+        document.getElementById('question-text').innerText = q.q;
+
+        // options banao
+        var container = document.getElementById('options-container');
+        container.innerHTML = ''; // pehle clear
+
+        // loop se options banao
+        for (var i = 0; i < q.options.length; i++) {
+            var btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = q.options[i];
+            btn.setAttribute('data-index', i); // index store kiya
+            btn.onclick = function() {
+                checkAnswer(parseInt(this.getAttribute('data-index')));
+            };
+            container.appendChild(btn);
+        }
+
+        // timer shuru karo
+        startTimer();
+    }
+
+    // timer function -- ye thora tricky tha
+    function startTimer() {
+        // timer display update karo
+        document.getElementById('timer').innerText = timeLeft;
+        document.getElementById('timer').classList.remove('danger');
+
+        timerInterval = setInterval(function() {
+            timeLeft--;
+            document.getElementById('timer').innerText = timeLeft;
+
+            // 10 seconds pe danger class lagao
+            if (timeLeft <= 10) {
+                document.getElementById('timer').classList.add('danger');
+            }
+
+            // time khatam!
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                // time out pe bhi answer show karo
+                if (!answered) {
+                    timeOut();
+                }
+            }
+        }, 1000);
+    }
+
+    // jab time khatam ho jaye
+    function timeOut() {
+        answered = true;
+        var allBtns = document.querySelectorAll('.option-btn');
+        // sahi jawab green karo
+        allBtns[questions[currentQ].answer].classList.add('correct');
+        // disable karo sab buttons
+        for (var i = 0; i < allBtns.length; i++) {
+            allBtns[i].disabled = true;
+        }
+        document.getElementById('next-btn').style.display = 'block';
+    }
+
+    function checkAnswer(selected) {
+        // agar already jawab dia toh kuch mat karo
+        if (answered) return;
+        answered = true;
+
+        // timer rok do
+        clearInterval(timerInterval);
+
+        var correct = questions[currentQ].answer;
+        var allBtns = document.querySelectorAll('.option-btn');
+
+        // sahi answer highlight karo
+        allBtns[correct].classList.add('correct');
+
+        if (selected == correct) {
+            score++; // score barha do
+        } else {
+            // galat answer red
+            allBtns[selected].classList.add('wrong');
+        }
+
+        // sab buttons disable karo takey dobara click na ho
+        for (var i = 0; i < allBtns.length; i++) {
+            allBtns[i].disabled = true;
+        }
+
+        // next button dikha do
+        document.getElementById('next-btn').style.display = 'block';
+    }
+
+    function nextQuestion() {
+        currentQ++;
+
+        // agar aur questions hain
+        if (currentQ < questions.length) {
+            showQuestion();
+        } else {
+            // quiz khatam
+            showResult();
+        }
+    }
+
+    function showResult() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+
+        document.getElementById('score-display').innerText = score + '/10';
+
+        // score ke hisaab se message
+        var emoji = '';
+        var msg = '';
+
+        if (score == 10) {
+            emoji = '🏆';
+            msg = 'Wah bhai wah! Perfect score! Genius ho tum!';
+        } else if (score >= 7) {
+            emoji = '🎉';
+            msg = 'Zabardast! Bohot acha kiya!';
+        } else if (score >= 5) {
+            emoji = '😊';
+            msg = 'Theek hai yaar, acha kiya!';
+        } else if (score >= 3) {
+            emoji = '😅';
+            msg = 'Thora aur padho bhai...';
+        } else {
+            emoji = '😭';
+            msg = 'Arre yaar kuch bhi nahi aata? Phir se try karo!';
+        }
+
+        document.getElementById('result-emoji').innerText = emoji;
+        document.getElementById('score-msg').innerText = msg;
+    }
+
+    // restart - sab reset
+    function restartQuiz() {
+        currentQ = 0;
+        score = 0;
+        answered = false;
+        timeLeft = 30;
+        clearInterval(timerInterval); // safety ke liye
+
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+
+        showQuestion();
+    }
+
+</script>
+
+</body>
+</html>
